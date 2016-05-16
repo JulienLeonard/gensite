@@ -1,9 +1,12 @@
-import sys
-sys.path.append("../lib")
+# DEPRECATED: run gensite.py instead
 
-from gensite import *
+# import sys
+# sys.path.append("../lib")
 
-def test_parse():
-    parse_org(dots2art_site())
+# from utils   import *
+# from gensite import *
 
-test_parse()
+# def test_parse():
+#     parse_org(dots2art_site())
+
+# test_parse()

@@ -1,7 +1,8 @@
-from utils           import *
+from basics          import *
 from myconfiguration import *
 from pageparser      import *
 from ontology        import *
+from template        import *
 from templateloader  import *
 from pagerender      import *
 

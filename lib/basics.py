@@ -634,6 +634,15 @@ def lcut(list,indices):
     result.append(list[indices[-2]:])
     return result
 
+def fread(filepath):
+    return (open(filepath, 'r').read())
+
 def flines(filepath):
-    return (open(filepath, 'r').read()).split("\n")
+    return fread(filepath).split("\n")
+
+def fput(filepath,content):
+    f = open(filepath,"w")
+    f.write(content)
+    f.close()
+
 
