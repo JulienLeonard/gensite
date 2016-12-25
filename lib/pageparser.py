@@ -69,7 +69,7 @@ def lineparam(line):
     value = ":".join(strings[2:]).strip()
     keytype = attrtype(key)
     result = (key,value,keytype)
-    puts("lineparam",result)
+    # puts("lineparam",result)
     return result
 
 def parse_org(filepath):
@@ -112,12 +112,14 @@ def parse_complete(pages):
     for page in pages:
         page = parse_complete_template(page)
 
+        if not "template" in page.mattributes:
+            puts("ERROR page missing template",page.tostringall())
+
         if not "output" in page.mattributes:
-            
-            if not "template" in page.mattributes:
-                puts("ERROR page missing template",page.tostringall())
-                
-            page.mattributes["output"] = page.mattributes["template"] + ".html"
+            if not "%" in page.mtitle:
+                page.mattributes["output"] = page.mtitle + ".html"
+            else:
+                page.mattributes["output"] = page.mattributes["template"] + ".html"
 
         result.append(page)
     return result
@@ -131,7 +133,7 @@ def parse_complete(pages):
 def parse_complete_template(tinstance):
     if tinstance.mtitle[0] == "%":
         template = tinstance.mtitle.strip().strip("%")
-        tinstance.mtitle = None
+        # tinstance.mtitle = None
         tinstance.mattributes["template"] = template
 
     if not "template" in tinstance.mattributes:
@@ -166,6 +168,9 @@ def pagesparser(filepath):
     result = parse_org(dots2art_site())
     result = parse_complete(result)
     # TODO: consolidate description of pages
+    for page in result:
+        puts("page",page.tostringall())
+
     return result
 
 def test():
