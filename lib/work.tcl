@@ -2,12 +2,12 @@
 #
 # generate page for a work
 #
-proc gen_work {aworks cwork} {
+proc gen_work {cwork} {
+    global works
     puts "gen_work $cwork"
     
     set template [template_load work]
 
-    array set works $aworks
     set title unknown
     if {[info exists works($cwork,title)]} {
 	set title $works($cwork,title)
@@ -15,14 +15,14 @@ proc gen_work {aworks cwork} {
     set ID        $cwork
     set imagepath $works($cwork,picture)
     
-    puts "image $cwork title $title"
+    # puts "image $cwork title $title"
     set workfilepath [workhtmlfilepath $ID]
     set workurl      [workurl $ID]
 
     set CONTENT [list]
     set imagepath [string map [list file:// ""] $imagepath]
     lappend CONTENT [h1 $title]
-    lappend CONTENT [img [genimageurl $imagepath]]
+    lappend CONTENT [img [genimageurl $imagepath] $title]
     set CONTENT [join $CONTENT \n]
     # fput $workfilepath [string map [list %TITLE% $title %CONTENT% $CONTENT] $template]
     set HEADER [gen_header]
@@ -32,38 +32,35 @@ proc gen_work {aworks cwork} {
     fput $workfilepath [string map [list %HEADER% $HEADER %FOOTER% $FOOTER %TITLE% $title %CONTENT% $CONTENT] $template]
 
     set works($cwork,url) $workurl
-    return [array get works]
     # return [list $cwork $title $workurl]
 }
 
 #
 # generate page for the worklist
 #
-proc gen_works {aworks maxnworks} {
-    array set works $aworks
+proc gen_works {maxnworks} {
+    global works
     
     # first generate all the work pages
     # array set works $aworks
     # set maxnworks 100
     set nworks 0
     foreach work $works(list) {
-	set aworks [gen_work $aworks $work]
+	gen_work $work
 
 	incr nworks
 	if {$nworks > $maxnworks} {
 	    break
 	}
     }
-
-    return $aworks
 }
 
 #
 # generate page for the worklist
 # works pages must have already been generated
 #
-proc gen_worklist {aworks maxnworks} {
-    array set works $aworks
+proc gen_worklist {maxnworks} {
+    global works
     
     # then generate list
     set template [template_load worklist]
@@ -86,8 +83,8 @@ proc gen_worklist {aworks maxnworks} {
 #
 # generate thumbnail for work
 #
-proc gen_work_thumbnail {aworks worktemplate work} {
-    array set works $aworks
+proc gen_work_thumbnail {worktemplate work} {
+    global works
 
     #set imageurl [genimageurl $image]
     #set title    $work
@@ -95,15 +92,20 @@ proc gen_work_thumbnail {aworks worktemplate work} {
     #lappend CONTENT [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl] $worktemplate]
 
     set imageurl [thumbnail_url [genimageurl $works($work,picture)]]
-    set title    $works($work,title)
+    if {[info exists works($work,title)]} {
+	set title    $works($work,title)
+    } else {
+	set title $work
+    }
     set link     [workurl $work]
-    puts "gen_work_thumbnail work $work image $imageurl"
+    # puts "gen_work_thumbnail work $work image $imageurl"
 
     if {![info exists works($work,url)]} {
-	set aworks [gen_work $aworks $work]
+	gen_work $work
     }
+    set ALT [htmlaltstring $title]
     
-    return [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl] $worktemplate]
+    return [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl %ALT% $ALT] $worktemplate]
 }
 
 #
@@ -193,30 +195,47 @@ proc gen_work_day_timeline {timeline} {
 #
 # gen portfolio
 #
-proc gen_portfolio {aworks timeline} {
+proc gen_portfolio {timeline} {
+    global works
+    
     foreach {template worktemplate} [templates_load portfolio] break
 
     set HEADER [gen_header]
     set FOOTER [gen_footer]
+    set pageindex 0
+
+    set pages [ldivide $timeline 9]
     
-    set CONTENT [list]
-    foreach item $timeline {
-	foreach {timestamp workdata} $item break
-	foreach {work image} $workdata break
+    foreach 9works $pages {	
+	set CONTENT [list]
+	foreach item $9works {
+	    foreach {timestamp workdata} $item break
+	    foreach {work image} $workdata break
 
-	lappend CONTENT [gen_work_thumbnail $aworks $worktemplate $work]
-	
-	# puts "work $work image $image"
-	
-	# set imageurl [genimageurl $image]
-	# set title    $work
-	# set link     [workurl $work]
-	# lappend CONTENT [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl] $worktemplate]
-    }	
-    set CONTENT [join $CONTENT \n]
+	    lappend CONTENT [gen_work_thumbnail $worktemplate $work]
+	    
+	    # puts "work $work image $image"
+	    
+	    # set imageurl [genimageurl $image]
+	    # set title    $work
+	    # set link     [workurl $work]
+	    # lappend CONTENT [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl] $worktemplate]
+	}	
+	set CONTENT [join $CONTENT \n]
 
-    set filepath [gensite_outputdir]/blog.html
-    set url      [relpath [gensite_outputdir]/ $filepath]
-    fput $filepath [string map [list %HEADER% $HEADER %CONTENT% $CONTENT %FOOTER% $FOOTER] $template]
+	if {$pageindex == 0} {
+	    set filepath [gensite_outputdir]/blog.html
+	} else {
+	    set filepath [gensite_outputdir]/blog-$pageindex.html
+	}
+	set url      [relpath [gensite_outputdir]/ $filepath]
+	if {$pageindex < [llength $pages] - 1} {
+	    set NEXT     [a blog-[+ $pageindex 1].html Next]
+	} else {
+	    set NEXT ""
+	}
+	fput $filepath [string map [list %HEADER% $HEADER %CONTENT% $CONTENT %FOOTER% $FOOTER %NEXT% $NEXT] $template]
+	incr pageindex
+    }
     return $url
 }

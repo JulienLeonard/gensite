@@ -10,6 +10,9 @@ proc dots2art_site           {} {global myDB; return [orgdb_property $myDB "DOTS
 proc dots2art_templates_dir  {} {global myDB; return [orgdb_property $myDB "DOTS2ART-SITE-TEMPLATE-DIR"]}
 proc gensite_outputdir       {} {global myDB; return [orgdb_property $myDB "DOTS2ART-SITE-OUTPUT"]}
 proc gensite_image_outputdir {} {global myDB; return [orgdb_property $myDB "DOTS2ART-SITE-IMAGE-OUTPUT"]}
+proc gensite_anim_outputdir  {} {global myDB; return [orgdb_property $myDB "DOTS2ART-SITE-ANIM-OUTPUT"]}
+proc gensite_anim_sourcedir  {} {global myDB; return [orgdb_property $myDB "DOTS2ART-ARCHIVE-DYNAMICS-DIR"]}
+
 
 proc relpath {basepath path} {
     return [string map [list $basepath ""] $path]
@@ -18,10 +21,10 @@ proc relpath {basepath path} {
 
 
 proc genimageurl {imagepath} {
-    puts "genimageurl for imagepath $imagepath"
+    # puts "genimageurl for imagepath $imagepath"
     set imagepath [string map [list file:// ""] $imagepath]
     set filename [lback [split $imagepath /]]
-    set outputfilepath [gensite_image_outputdir]/[string map [list " " "-"] $filename]
+    set outputfilepath [gensite_image_outputdir]/[string map [list " " "-" "_" "-"] $filename]
     if {![file exists $imagepath]} {
 	puts "ERROR: image filepath $imagepath does not exist"
 	return ""
@@ -30,7 +33,7 @@ proc genimageurl {imagepath} {
 	    file copy -force $imagepath $outputfilepath
 	}
 	set result [relpath [gensite_outputdir]/ $outputfilepath]
-	puts "genimageurl result $result"
+	# puts "genimageurl result $result"
 	return $result
     }
 }
@@ -51,36 +54,43 @@ proc templates_load {name} {
     return $templates
 }
 
+proc htmlurlstring {string} {
+    return [string map [list " " "-" "_" "-" "." "-"] [string tolower $string]]
+}
+
+proc htmlaltstring {string} {
+    return [string map [list "-" " "] [htmlurlstring $string]]
+}
 
 proc workhtmlfilepath {work} {
-    set work         [string map [list " " "_"] $work]
+    set work         [htmlurlstring $work]
     set workfilepath [gensite_outputdir]/$work.html
     return $workfilepath
 }
 
-proc workurl {work} {
-    set workurl      [relpath [gensite_outputdir]/ [workhtmlfilepath $work]]
-    return $workurl
-}
-
 proc projecthtmlfilepath {project} {
-    set project         [string map [list " " "_"] $project]
+    set project         [htmlurlstring $project]
     set projectfilepath [gensite_outputdir]/$project.html
     return $projectfilepath
 }
 
 proc dynamichtmlfilepath {dynamic} {
-    set dynamic         [string map [list " " "_"] $dynamic]
+    set dynamic         [htmlurlstring $dynamic]
     set dynamicfilepath [gensite_outputdir]/$dynamic.html
     return $dynamicfilepath
 }
 
 proc tutorialhtmlfilepath {tutorial} {
-    set tutorial         [string map [list " " "_"] $tutorial]
+    set tutorial         [htmlurlstring $tutorial]
     set tutorialfilepath [gensite_outputdir]/$tutorial.html
     return $tutorialfilepath
 }
 
+
+proc workurl {work} {
+    set workurl      [relpath [gensite_outputdir]/ [workhtmlfilepath $work]]
+    return $workurl
+}
 
 proc projecturl {project} {
     set projecturl      [relpath [gensite_outputdir]/ [projecthtmlfilepath $project]]

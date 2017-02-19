@@ -2,22 +2,22 @@
 #
 # gen tutorial thumbnail
 #
-proc gen_tutorial_thumbnail {atutorials tutorialtemplate tutorial} {
-    array set tutorials $atutorials
+proc gen_tutorial_thumbnail {tutorialtemplate tutorial} {
+    global tutorials
 
     set imageurl [thumbnail_url [genimageurl $tutorials($tutorial,imageheader)]]
     set title    $tutorial
     set link     [tutorialurl $tutorial]
-    return [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl] $tutorialtemplate]
+    set ALT      [htmlaltstring $tutorial]
+    return [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl %ALT% $ALT] $tutorialtemplate]
 }
 
 
 #
 # gen_tutorials_page
 #
-proc gen_tutorials_page {atutorials} {
-
-    array set tutorials $atutorials
+proc gen_tutorials_page {} {
+    global tutorials
     
     foreach {template tutorialtemplate} [templates_load index] break
 
@@ -28,7 +28,7 @@ proc gen_tutorials_page {atutorials} {
     lappend CONTENT [h1 Tutorials]
     foreach tutorial $tutorials(list) {
 	puts "gen thumbnail tutorial $tutorial"
-	lappend CONTENT [gen_tutorial_thumbnail $atutorials $tutorialtemplate $tutorial]
+	lappend CONTENT [gen_tutorial_thumbnail $tutorialtemplate $tutorial]
     }	
     
     set CONTENT [join $CONTENT \n]
@@ -43,23 +43,21 @@ proc gen_tutorials_page {atutorials} {
 #
 # generate page for each tutorials
 #
-proc gen_tutorials {atutorials maxntutorials} {
+proc gen_tutorials {maxntutorials} {
     # array set tutorials $atutorials
     
     # first generate all the tutorial pages
-    array set tutorials $atutorials
+    global tutorials
     # set maxntutorials 1000
     set ntutorials 0
     foreach tutorial $tutorials(list) {
-	set atutorials [gen_tutorial $atutorials $tutorial]
+	gen_tutorial $tutorial
 
 	incr ntutorials    
 	if {$ntutorials > $maxntutorials} {
 	    break
 	}
     }
-
-    return $atutorials
 }
 
 proc tutoimagefilepath {filename} {
@@ -133,8 +131,8 @@ proc tuto2html {line} {
 #
 # gen_tutorial
 #
-proc gen_tutorial {atutorials tutorial} {
-    array set tutorials $atutorials
+proc gen_tutorial {tutorial} {
+    global tutorials
 
     set HEADER [gen_header]
     set FOOTER [gen_footer]
@@ -180,6 +178,4 @@ proc gen_tutorial {atutorials tutorial} {
 
     fput $tutorialfilepath [string map [list %TITLE% $title %HEADER% $HEADER %CONTENT% $CONTENT %FOOTER% $FOOTER] $template]
     set tutorials($tutorial,url) $tutorialurl
-
-    return [array get tutorials]
 }

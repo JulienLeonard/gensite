@@ -11,8 +11,11 @@ proc h3 {title} {
 }
 
 
-proc img {src} {
-    return "<img src=\"${src}\"/>"
+proc img {src {alt ""}} {
+    if {[sempty $alt]} {
+	return "<img src=\"${src}\"/>"
+    }
+    return "<img src=\"${src}\" alt=\"${alt}\"/>"
 }
 
 proc section {content} {

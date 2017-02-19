@@ -2,9 +2,10 @@
 #
 # generate page for a project
 #
-proc gen_project {aprojects aworks project} {
+proc gen_project {project} {
+    global projects
+    
     puts "gen_project $project ..."
-    array set projects $aprojects
     # set template [template_load project]
     foreach {template worktemplate} [templates_load project] break
 
@@ -21,8 +22,8 @@ proc gen_project {aprojects aworks project} {
     lappend CONTENT [p [string trim $projects($project,description) "\{\}"]]
 
     foreach work $projects($project,works) {
-     	puts "project $project work $work"
-     	lappend CONTENT [gen_work_thumbnail $aworks $worktemplate $work] 
+     	# puts "project $project work $work"
+     	lappend CONTENT [gen_work_thumbnail $worktemplate $work] 
     }	
 
     set HEADER [gen_header]
@@ -33,38 +34,36 @@ proc gen_project {aprojects aworks project} {
 
     set projects($project,url) $projecturl
     # return [list $project $title $projecturl]
-    return [array get projects]
+    # return [array get projects]
 }
 
 #
 # generate page for each projects
 #
-proc gen_projects {aprojects aworks maxnprojects} {
+proc gen_projects {maxnprojects} {
+    global projects
     # array set projects $aprojects
     
     # first generate all the project pages
-    array set projects $aprojects
     # set maxnprojects 1000
     set nprojects 0
     foreach project $projects(list) {
-	set aprojects [gen_project $aprojects $aworks $project]
+	gen_project $project
 
 	incr nprojects    
 	if {$nprojects > $maxnprojects} {
 	    break
 	}
     }
-
-    return $aprojects
 }
 
 #
 # generate page for the projectlist
 #
-proc gen_projectlist {aprojects} {
+proc gen_projectlist {} {
 
     # first generate all the project pages
-    array set projects $aprojects
+    global projects
     set maxnprojects 1000
     set nprojects 0
     foreach project $projects(list) {
@@ -96,13 +95,13 @@ proc gen_projectlist {aprojects} {
 #
 # gen project thumbnail
 #
-proc gen_project_thumbnail {aprojects aworks projecttemplate project} {
-    array set projects $aprojects
-    array set works    $aworks
+proc gen_project_thumbnail {projecttemplate project} {
+    global projects
+    global works
     
     set workheader $projects($project,workheader)
     
-    puts "project $project workheader $workheader"
+    # puts "project $project workheader $workheader"
     
     # foreach {timestamp workdata} $item break
     # foreach {work image} $workdata break
@@ -113,37 +112,51 @@ proc gen_project_thumbnail {aprojects aworks projecttemplate project} {
     }
     set title    $project
     set link     [projecturl $project]
-    return [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl] $projecttemplate]
+    set ALT      [htmlaltstring $project]
+    return [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl %ALT% $ALT] $projecttemplate]
 }
 
 #
 # gen_projects
 #
-proc gen_projects_page {aprojects aworks} {
-
-    array set projects $aprojects
-    array set works    $aworks
+proc gen_projects_page {} {
+    global projects
+    global works   
 
     # foreach work $works(list) {
     #  	puts "work $work"
     # }
     
-    foreach {template projecttemplate} [templates_load index] break
+    foreach {template projecttemplate} [templates_load projects] break
 
     set HEADER [gen_header]
     set FOOTER [gen_footer]
+    set pageindex 0
+    set pages [ldivide $projects(list) 9]
     
-    set CONTENT [list]
-    lappend CONTENT [h1 Projects]
+    foreach 9projects $pages {
+	set CONTENT [list]
+	lappend CONTENT [h1 Series]
 
-    foreach project $projects(list) {
-	lappend CONTENT [gen_project_thumbnail $aprojects $aworks $projecttemplate $project]
-    }	
+	foreach project $9projects {
+	    lappend CONTENT [gen_project_thumbnail $projecttemplate $project]
+	}	
     
-    set CONTENT [join $CONTENT \n]
-    
-    set filepath [gensite_outputdir]/projects.html
-    set url      [relpath [gensite_outputdir]/ $filepath]
-    fput $filepath [string map [list %HEADER% $HEADER %CONTENT% $CONTENT %FOOTER% $FOOTER] $template]
+	set CONTENT [join $CONTENT \n]
+
+	if {$pageindex == 0} {
+	    set filepath [gensite_outputdir]/projects.html
+	} else {
+	    set filepath [gensite_outputdir]/projects-$pageindex.html
+	}
+	set url      [relpath [gensite_outputdir]/ $filepath]
+	if {$pageindex < [llength $pages] - 1} {
+	    set NEXT     [a projects-[+ $pageindex 1].html Next]
+	} else {
+	    set NEXT ""
+	}
+	fput $filepath [string map [list %HEADER% $HEADER %CONTENT% $CONTENT %FOOTER% $FOOTER %NEXT% $NEXT] $template]
+	incr pageindex
+    }
     return $url
 }

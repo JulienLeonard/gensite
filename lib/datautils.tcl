@@ -16,7 +16,8 @@ proc gensite_tutorials_filepath {} {global myDB; return [orgdb_property $myDB "D
 #
 # parse page data
 #
-proc pages_data {} {
+proc load_pages_data {} {
+    global pages
     set currentdir [pwd]
     cd "c:/DEV/org2obj/"
     source org2obj.tcl
@@ -46,14 +47,16 @@ proc pages_data {} {
 	}
     }
 
-    return [array get result]
+    array set pages [array get result]
 }
 
 
 #
 # parse work org file then transform the data for efficiency and praticability
 #
-proc works_data {} {
+proc load_works_data {} {
+    global works
+    
     set currentdir [pwd]
     cd "c:/DEV/org2obj/"
     source org2obj.tcl
@@ -79,84 +82,81 @@ proc works_data {} {
 	}
     }
     
-    return [array get result]
+    array set works [array get result]
 }
 
 #
 # parse dynamics data
 #
-proc dynamics_data {} {
+proc load_dynamics_data {} {
+    global dynamics
     set currentdir [pwd]
     cd "c:/DEV/org2obj/"
     source org2obj.tcl
     cd $currentdir
 
-    array set dynamics [org2obj [gensite_dynamics_filepath]]
+    array set orgdynamics [org2obj [gensite_dynamics_filepath]]
 
     array set result [list]
     set result(list) [list]
 
-    foreach level $dynamics(levels) {
-	foreach dynamic $dynamics($level,children) {
-	    set ID $dynamics($dynamic,title)
+    foreach level $orgdynamics(levels) {
+	foreach dynamic $orgdynamics($level,children) {
+	    set ID $orgdynamics($dynamic,title)
 
-	    set result($ID,imageheader) $dynamics($dynamic,param,imageheader)
+	    set result($ID,imageheader) $orgdynamics($dynamic,param,imageheader)
 	    foreach dir {C:/archive/dots2art/images/bigs/archive C:/archive/dots2art/images/source} {
-		if {[file exists "${dir}/$dynamics($dynamic,param,imageheader)"]} {
-		    set result($ID,imageheader)  "${dir}/$dynamics($dynamic,param,imageheader)"
+		if {[file exists "${dir}/$orgdynamics($dynamic,param,imageheader)"]} {
+		    set result($ID,imageheader)  "${dir}/$orgdynamics($dynamic,param,imageheader)"
 		    break
 		}
 	    }
-	    set result($ID,description) "TODO"
-	    set result($ID,code)        "TODO"
-
-
-	    foreach child $dynamics($dynamic,children) {
-		if {[s= $dynamics($child,title) Description]} {
-		    set result($ID,description) $dynamics($child,lines)
-		} elseif {[s= $dynamics($child,title) Code]} {
-		    set result($ID,code) [string map [list "https://dl.dropboxusercontent.com/u/78965321/site/" ""] $dynamics($child,lines)]
-		}
-	    }
+	    set result($ID,description)   $orgdynamics($dynamic,param,description)
+	    set result($ID,jsdir)         $orgdynamics($dynamic,param,jsdir)
+	    set result($ID,js)            [string trim $orgdynamics($dynamic,param,js)]
+	    set result($ID,d3)            [string trim $orgdynamics($dynamic,param,d3)]
+	    set result($ID,libsinside)    [string trim $orgdynamics($dynamic,param,libsinside)]
+	    set result($ID,dropboxurldir) "https://dl.dropboxusercontent.com/u/78965321/site/$result($ID,jsdir)"
 
 	    if {![string match *TODO* $result($ID,imageheader)]} {
 		lappend result(list) $ID
 	    }
 
-	    puts "dynamic $dynamic imageheader $result($ID,imageheader) description $result($ID,description) code $result($ID,code)"
+	    puts "dynamic $dynamic imageheader $result($ID,imageheader) description $result($ID,description)"
 	}
     }
 
-    return [array get result]
+    array set dynamics [array get result]
 }
 
 #
 # parse project org file then transform the data for efficiency and praticability
 #
-proc projects_data {aworks} {
+proc load_projects_data {} {
+    global works
+    global projects
+    
     set currentdir [pwd]
     cd "c:/DEV/org2obj/"
     source org2obj.tcl
     cd $currentdir
 
-    array set works $aworks
-    
-    array set projects [org2obj [gensite_projects_filepath]]
+    array set orgprojects [org2obj [gensite_projects_filepath]]
 
     array set result [list]
     set result(list) [list]
 
-    foreach level $projects(levels) {
-	foreach project $projects($level,children) {
-	    set ID $projects($project,title)
+    foreach level $orgprojects(levels) {
+	foreach project $orgprojects($level,children) {
+	    set ID $orgprojects($project,title)
 	    lappend result(list) $ID
 
 	    set result($ID,workheader) ""
-	    set result($ID,description) $projects($project,lines)
+	    set result($ID,description) $orgprojects($project,lines)
 	    set result($ID,works) [list]
 	    
-	    foreach child $projects($project,children) {
-		set work [org2obj_extracttext $projects($child,title)]
+	    foreach child $orgprojects($project,children) {
+		set work [org2obj_extracttext $orgprojects($child,title)]
 
 		puts "project $project child $child"
 		# check that work exists, and get real work ID if title
@@ -183,11 +183,11 @@ proc projects_data {aworks} {
 		}
 	    }
 
-	    if {[info exists projects($project,param,workheader)]} {
-		# set workheader [string map [list "file:dots2art-works.org::*" "" "%20" " "] [lfront [split $projects($project,param,workheader) "\]"]]]
+	    if {[info exists orgprojects($project,param,workheader)]} {
+		# set workheader [string map [list "file:dots2art-works.org::*" "" "%20" " "] [lfront [split $orgprojects($project,param,workheader) "\]"]]]
 		# set result($ID,workheader) $workheader
 
-		set work [org2obj_extracttext $projects($project,param,workheader)]
+		set work [org2obj_extracttext $orgprojects($project,param,workheader)]
 
 		puts "project $project workheader $work"
 		# check that work exists, and get real work ID if title
@@ -215,15 +215,16 @@ proc projects_data {aworks} {
 	    }
 	}
     }
-    return [array get result]
+
+    array set projects [array get result]
 }
 
 #
 # generate a timeline for works
 # return [[title url]]
 #
-proc timeline_works {aworks {nworks 100000}} {
-    array set works $aworks
+proc timeline_works {{nworks 100000}} {
+    global works
 
     set timeline [list]
     set index 0
@@ -274,44 +275,46 @@ proc splitworkdata {aworks} {
 #
 # parse tutorials data
 #
-proc tutorials_data {} {
+proc load_tutorials_data {} {
+    global tutorials
+    
     set currentdir [pwd]
     cd "c:/DEV/org2obj/"
     source org2obj.tcl
     cd $currentdir
 
-    array set tutorials [org2obj [gensite_tutorials_filepath]]
+    array set orgtutorials [org2obj [gensite_tutorials_filepath]]
 
     array set result [list]
     set result(list) [list]
 
-    foreach level $tutorials(levels) {
-	foreach tutorial $tutorials($level,children) {
-	    set ID $tutorials($tutorial,title)
+    foreach level $orgtutorials(levels) {
+	foreach tutorial $orgtutorials($level,children) {
+	    set ID $orgtutorials($tutorial,title)
 	    lappend result(list) $ID
 	    
-	    set result($ID,imageheader) $tutorials($tutorial,param,imageheader)
+	    set result($ID,imageheader) $orgtutorials($tutorial,param,imageheader)
 	    foreach dir {C:/archive/dots2art/images/bigs/archive C:/archive/dots2art/images/source C:/DEV/PVG/examples} {
-		if {[file exists "${dir}/$tutorials($tutorial,param,imageheader)"]} {
-		    set result($ID,imageheader)  "${dir}/$tutorials($tutorial,param,imageheader)"
+		if {[file exists "${dir}/$orgtutorials($tutorial,param,imageheader)"]} {
+		    set result($ID,imageheader)  "${dir}/$orgtutorials($tutorial,param,imageheader)"
 		    break
 		}
 	    }
 
-	    set result($ID,lines) $tutorials($tutorial,lines)
+	    set result($ID,lines) $orgtutorials($tutorial,lines)
 	    set result($ID,sections) [list]
 	    
-	    foreach section $tutorials($tutorial,children) {
-		set sectionID $tutorials($section,title)
+	    foreach section $orgtutorials($tutorial,children) {
+		set sectionID $orgtutorials($section,title)
 		lappend result($ID,sections) $sectionID
-		set result($ID,$sectionID,lines) $tutorials($section,lines)
+		set result($ID,$sectionID,lines) $orgtutorials($section,lines)
 	    }
 
 	    puts "tutorial $tutorial imageheader $result($ID,imageheader) sections $result($ID,sections)"
 	}
     }
 
-    return [array get result]
+    array set tutorials [array get result]
 }
 
 

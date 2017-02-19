@@ -18,7 +18,7 @@ proc gen_menu {} {
     foreach {menutemplate} [templates_load menu] break
     
     set MENUS [list]
-    foreach {link text} {index.html home projects.html projects dynamics.html dynamics tutorials.html tutorials blog.html blog About.html about Shop.html shop} {
+    foreach {link text} {projects.html series dynamics.html dynamics tutorials.html tutorials About.html about Shop.html shop} {
 	lappend MENUS [string map [list %LINK% $link %TEXT% $text] $menutemplate]
     }
     set MENUS [join $MENUS \n]
@@ -49,12 +49,11 @@ proc gen_footer {} {
 #
 # gen_index 
 #
-proc gen_index {aprojects aworks adynamics atutorials} {
-
-    array set projects  $aprojects
-    array set works     $aworks
-    array set dynamics  $adynamics
-    array set tutorials $atutorials
+proc gen_index {} {
+    global projects
+    global works   
+    global dynamics
+    global tutorials
 
     # foreach work $works(list) {
     #  	puts "work $work"
@@ -67,29 +66,30 @@ proc gen_index {aprojects aworks adynamics atutorials} {
     
     set CONTENT [list]
 
+    lappend CONTENT [h1 "Generative art by Julien Leonard"]
 
-    lappend CONTENT [h1 Latest]
+    lappend CONTENT [h2 [a blog.html Latest]]
     foreach work [lrange $works(list) 0 2] {
-	lappend CONTENT [gen_work_thumbnail $aworks $projecttemplate $work]
+	lappend CONTENT [gen_work_thumbnail $projecttemplate $work]
     }	
     # lappend CONTENT [h2 [a [relpath [gensite_outputdir]/ blog.html] More]]
 
-    lappend CONTENT [h1 Projects]
+    lappend CONTENT [h2 [a projects.html Series]]
     foreach project [lrange $projects(list) 0 2] {
-	lappend CONTENT [gen_project_thumbnail $aprojects $aworks $projecttemplate $project]
+	lappend CONTENT [gen_project_thumbnail $projecttemplate $project]
     }	
     # lappend CONTENT [h2 [a [relpath [gensite_outputdir]/ projects.html] More]]
 
 
-    lappend CONTENT [h1 Dynamics]
+    lappend CONTENT [h2 [a dynamics.html Dynamics]]
     foreach dynamic [lrange $dynamics(list) 0 2] {
-	lappend CONTENT [gen_dynamic_thumbnail $adynamics $projecttemplate $dynamic]
+	lappend CONTENT [gen_dynamic_thumbnail $projecttemplate $dynamic]
     }	
     # lappend CONTENT [h2 [a [relpath [gensite_outputdir]/ dynamics.html] More]]
 
-    lappend CONTENT [h1 Tutorials]
+    lappend CONTENT [h2 [a tutorials.html Tutorials]]
     foreach tutorial [lrange $tutorials(list) 0 2] {
-	lappend CONTENT [gen_tutorial_thumbnail $atutorials $projecttemplate $tutorial]
+	lappend CONTENT [gen_tutorial_thumbnail $projecttemplate $tutorial]
     }	
     # lappend CONTENT [h2 [a [relpath [gensite_outputdir]/ tutorials.html] More]]
 
@@ -108,6 +108,12 @@ proc gen_index {aprojects aworks adynamics atutorials} {
 # main generator
 #
 proc main {} {
+    global tutorials
+    global projects
+    global works
+    global dynamics
+    global pages
+    
     set worklisturl    ""
     set projectlisturl ""
     set timelineurl    ""
@@ -115,32 +121,35 @@ proc main {} {
 
     puts "START generation ... "
 
-    set atutorials [tutorials_data]
-    set atutorials [gen_tutorials $atutorials 100]
-    set atutorials [gen_tutorials_page $atutorials]
+    load_tutorials_data
+    gen_tutorials 100
+    gen_tutorials_page
     
-    set adynamics [dynamics_data]
+    load_dynamics_data
+    gen_dynamics 100
+    gen_dynamics_page
+    
+    load_pages_data
+    gen_pages
+    
+    load_works_data
+    load_projects_data
 
-    set adynamics [gen_dynamics $adynamics 100]
-    set adynamics [gen_dynamics_page $adynamics]
+    # array set projects $aprojects
+    #puts "projects list $projects(list)"
+    #puts "sublist  [ldivide $projects(list) 9]"
     
-    set apages [pages_data]
-    set apages [gen_pages $apages]
+    gen_works 1000
+    gen_projects 100
     
-    set aworks         [works_data]
-    set aprojects      [projects_data $aworks]
-    
-    set aworks         [gen_works $aworks 10]
-    set aprojects      [gen_projects $aprojects $aworks 100]
-    
-    set timeline       [timeline_works $aworks 10]
+    set timeline       [timeline_works 1000]
     # set timelineurl    [gen_work_day_timeline $timeline]     
 
-    gen_projects_page $aprojects $aworks
+    gen_projects_page
 
-    gen_portfolio $aworks $timeline
+    gen_portfolio $timeline
 
-    gen_index $aprojects $aworks $adynamics $atutorials
+    gen_index
 
     checkthumbnails
     

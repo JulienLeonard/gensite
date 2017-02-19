@@ -2,8 +2,8 @@
 #
 # gen pages
 #
-proc gen_pages {apages} {
-    array set pages $apages
+proc gen_pages {} {
+    global pages
 
     set HEADER [gen_header]
     set FOOTER [gen_footer]
@@ -36,5 +36,4 @@ proc gen_pages {apages} {
 
 	}
     }
-    return [array get pages]
 }
