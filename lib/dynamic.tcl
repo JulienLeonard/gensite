@@ -20,15 +20,15 @@ proc gen_dynamics_page {} {
 
     global dynamics
     
-    foreach {template dynamictemplate} [templates_load index] break
+    foreach {template full_worktemplate thumbnail_worktemplate} [templates_load index] break
 
-    set HEADER [gen_header]
+    set HEADER [gen_header watch]
     set FOOTER [gen_footer]
     
     set CONTENT [list]
-    lappend CONTENT [h1 Dynamics]
+    # lappend CONTENT [h1 Dynamics]
     foreach dynamic $dynamics(list) {
-	lappend CONTENT [gen_dynamic_thumbnail $dynamictemplate $dynamic]
+	lappend CONTENT [gen_dynamic_thumbnail $thumbnail_worktemplate $dynamic]
     }	
     
     set CONTENT [join $CONTENT \n]

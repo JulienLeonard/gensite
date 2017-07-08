@@ -2,7 +2,7 @@ from utils           import *
 from myconfiguration import *
 
 from distimport import *
-org2obj = distimport("C:/DEV/org2obj","org2obj")
+org2obj = distimport("c:/Dropbox/dev/org2obj","org2obj")
 
 def parseobjects(orgfilepath):
     resulttmp = org2obj.org2obj(orgfilepath)

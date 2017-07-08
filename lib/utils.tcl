@@ -248,6 +248,16 @@ proc lenum {min max {incr 1}} {
     return $result
 }
 
+proc enum {list} {
+    set result [list]
+    set index 0
+    foreach item $list {
+	lappend result $index $item
+	incr index
+    }
+    return $result
+}
+
 proc lzip {args} {
     set result [list]
     set minlength [llength [lindex $args 0]]
@@ -374,9 +384,9 @@ proc checkargs {args} {
     uplevel 1 {
 	foreach arg $tobechecked {
 	    if {[llength $args] == 1} {
-	    if {![info exists $arg]} {
-		error "arg $arg not present"
-	    }
+		if {![info exists $arg]} {
+		    error "arg $arg not present"
+		}
 	    } else {
 		foreach {param dvalue} $arg break
 		if {![info exists $arg]} {
@@ -739,6 +749,10 @@ proc fcontent {filepath} {
     return [fread $filepath]
 }
 
+proc flines {filepath} {
+    return [split [fread $filepath] \n]
+}
+
 proc file_xml_read {filepath} {
     return [freadxml $filepath]
 }
@@ -818,7 +832,6 @@ proc file_read_choose {extension} {
     if {![string length $filename]} {
 	return
     }
-
     
     return [file_read $filepath]
 }
@@ -827,14 +840,13 @@ proc fget {pattern} {
     return [glob -directory "./" $pattern]
 }
 
-proc get_files_by_date {{pattern *} {directory ""}} {
-    if {![string length $directory]} {
-	set directory "./"
-    }
-    
-    foreach file [glob -directory $directory $pattern] {
+
+proc sort_filepaths_by_date {filepaths} {
+    set filelist [list]
+    foreach file $filepaths {
 	lappend filelist [list $file [file mtime $file]]
     }
+    
     set filelist [lsort -integer -index 1 $filelist]
     
     set result [list]
@@ -843,6 +855,14 @@ proc get_files_by_date {{pattern *} {directory ""}} {
     }
 
     return $result
+}
+
+proc get_files_by_date {{pattern *} {directory ""}} {
+    if {![string length $directory]} {
+	set directory "./"
+    }
+    
+    return [sort_filepaths_by_date [glob -directory $directory $pattern]]
 }
     
     
@@ -859,10 +879,10 @@ proc irange {istart iend {iincr 1}} {
     return $result
 }
 
-proc trace {args} {
-    set trace [join $args " "]
-    puts $trace
-}
+# proc trace {args} {
+#     set trace [join $args " "]
+#     puts $trace
+# }
 
 proc sample {range value} {
     lassign $range min max
@@ -1413,6 +1433,161 @@ proc allfilepaths {sourcedir filepattern} {
     }
     eval lappend result [glob -nocomplain -directory $sourcedir/ $filepattern]
     eval lappend result [glob -nocomplain -directory $sourcedir/ -types hidden $filepattern]
+    return $result
+}
+
+proc distsource {sourcedir filename} {
+    upvar 1 currentdir currentdir
+    set currentdir [pwd]
+    set script "cd $sourcedir ; source $filename ; cd $currentdir "
+    uplevel 1 $script
+}
+#
+# extract from file line by line
+#
+proc fforeach {fforeach_line_ref fforeach_file_path fforeach_pattern {fforeach_body ""}} {
+    upvar $fforeach_line_ref fforeach_line
+    if {[sempty $fforeach_body]} {
+	set fforeach_body $fforeach_pattern
+	set fforeach_pattern ""
+    }
+    set fforeach_fid [open $fforeach_file_path r]
+    fconfigure $fforeach_fid -encoding unicode
+    while {[gets $fforeach_fid fforeach_line] >= 0} {
+	if {[sempty $fforeach_pattern] || [string match $fforeach_pattern $fforeach_line]} {
+	    # ------- FOREACH BODY ------------<
+	    uplevel $fforeach_body
+	    # ------END FOREACH BODY----------->
+	}
+    }          
+    close $fforeach_fid
+}
+
+#
+# extract from list of files 
+#
+proc fforeachs {fforeach_line_ref fforeach_file_paths fforeach_pattern {fforeach_body ""}} {
+    foreach fforeach_file_path $fforeach_file_paths {
+	fforeach $fforeach_line_ref $fforeach_file_path  $fforeach_pattern $fforeach_body
+    }
+}
+
+#
+# build all the direct dirpaths from dirspec with wild cards
+#
+proc getallfiles {dirspec filename} {
+
+    set dirspec [split $dirspec /]
+    
+    # build all directories
+    set root [lfront $dirspec]
+    set alldirs [list $root]
+    foreach dirpart [lrange $dirspec 1 end] {
+	puts "dirpart $dirpart alldirs $alldirs"
+	set newalldirs [list]
+	foreach alldir $alldirs {
+	    eval lappend newalldirs [glob -nocomplain -directory "${alldir}/" -types d $dirpart]
+	}
+	set alldirs $newalldirs
+    }
+
+    # build all files
+    set result [list]
+    foreach dir $alldirs {
+	foreach filepath [glob -nocomplain -directory $dir $filename] {
+	    if {[file exists $filepath]} {
+		lappend result $filepath
+	    }
+	}
+    }
+    
+    return $result
+}
+
+#
+# built all strings list from generalized string
+#
+proc enumstrings {stringspec {sep /}} {
+    set result [list ""]
+    set subpaths [split $stringspec {\{\}}]
+    foreach subpath $subpaths {
+	set newresult [list]
+	set alternatives [list $subpath]
+	if {[string first "|" $subpath] > -1} {
+	    set item [string trim $subpath "\}"]
+	    set item [string trim $subpath "\{"]
+	    set alternatives [split $subpath "|"]
+	}
+	#puts "alternatives $alternatives"
+	foreach alt $alternatives {
+	    #puts "alt $alt substrings "
+	    foreach item $result {
+		lappend newresult "${item}${alt}"
+	    }
+	}
+	set result $newresult
+	#puts "result $result"
+    }
+    return $result
+}
+
+#
+#
+#
+proc getallsfiles {dirspec filename} {
+    set result [list]
+    foreach rdirspec [enumstrings $dirspec "/"] {
+	eval lappend result [getallfiles $rdirspec $filename]
+    }
+    return $result
+}
+				     
+#
+# get all files from generalized path
+# generalized path = aaa/bbb/ccc/{eee/fff|gggg}/hhh
+#
+
+#
+# sort list of obj and corresponding attribute in a flat list
+#
+proc arrayserial {alist {objlist list} {subattr ""}} {
+    array set input $alist
+
+    set result [list]
+    foreach obj $input($objlist) {
+	set key $obj
+	if {![sempty $subattr]} {
+	    append key ",$subattr"
+	}
+	lappend result $obj $input($key)
+    }
+    
+    return $result
+}
+
+#
+# extract all values from the array
+#
+proc arrayvalues {alist} {
+    set result [list]
+    foreach {key val} $alist {
+	lappend result $val
+    }
+    return $result
+}
+
+#
+# ldelete: remove one item from the list at index index
+#
+proc ldelete {list rindex} {
+    set result [list]
+    set index 0
+    foreach item $list {
+	if {$index != $rindex} {
+	    lappend result $item
+	}
+	incr index
+    }
     return $result
 }
 

@@ -5,10 +5,10 @@ set myDB [MYDB]
 
 
 proc dots2art_site           {} {return [MYDBPROP "DOTS2ART-SITE-ORG"]}
-proc dots2art_templates_dir  {} {return [MYDBPROP "DOTS2ART-SITE-TEMPLATE-DIR"]}
-proc gensite_outputdir       {} {return [MYDBPROP "DOTS2ART-SITE-OUTPUT"]}
-proc gensite_image_outputdir {} {return [MYDBPROP "DOTS2ART-SITE-IMAGE-OUTPUT"]}
-proc gensite_anim_outputdir  {} {return [MYDBPROP "DOTS2ART-SITE-ANIM-OUTPUT"]}
+proc dots2art_templates_dir  {} {return [MYDBPROP "DOTS2ART-SITE-TEMPLATE-DIR-TEMP"]}
+proc gensite_outputdir       {} {return [MYDBPROP "DOTS2ART-SITE-OUTPUT-TEMP"]}
+proc gensite_image_outputdir {} {return [MYDBPROP "DOTS2ART-SITE-IMAGE-OUTPUT-TEMP"]}
+proc gensite_anim_outputdir  {} {return [MYDBPROP "DOTS2ART-SITE-ANIM-OUTPUT-TEMP"]}
 proc gensite_anim_sourcedir  {} {return [MYDBPROP "DOTS2ART-ARCHIVE-DYNAMICS-DIR"]}
 
 
@@ -34,22 +34,6 @@ proc genimageurl {imagepath} {
 	# puts "genimageurl result $result"
 	return $result
     }
-}
-
-#
-# image must be png highest definition present in subdir archive/dots2art/images/site
-#
-proc gen_image_full {template imagename} {
-
-    set imagepath c:/archive/dots2art/images/site/${imagename}.png
-    set imageurl [genimageurl $imagepath]
-
-    set title $imagename
-    
-    set ALT [htmlaltstring $title]
-    
-    return [string map [list %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl %ALT% $ALT] $template]
-
 }
 
 proc template_load {name} {

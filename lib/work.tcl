@@ -109,6 +109,35 @@ proc gen_work_thumbnail {worktemplate work} {
 }
 
 #
+# generate work full
+#
+proc gen_work_full {worktemplate work} {
+    global works
+
+    #set imageurl [genimageurl $image]
+    #set title    $work
+    #set link     [workurl $work]
+    #lappend CONTENT [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl] $worktemplate]
+
+    set imageurl [genimageurl $works($work,picture)]
+    if {[info exists works($work,title)]} {
+	set title    $works($work,title)
+    } else {
+	set title $work
+    }
+    set link     [workurl $work]
+    # puts "gen_work_thumbnail work $work image $imageurl"
+
+    if {![info exists works($work,url)]} {
+	gen_work $work
+    }
+    set ALT [htmlaltstring $title]
+    
+    return [string map [list %LINK% $link %TITLE% $title %IMAGEURL% $imageurl %IMAGEURL1024% $imageurl %IMAGEURL150% $imageurl %IMAGEURL550% $imageurl %ALT% $ALT] $worktemplate]
+}
+
+
+#
 # work timeline
 #
 proc gen_work_timeline {timeline} {

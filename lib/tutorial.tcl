@@ -19,16 +19,16 @@ proc gen_tutorial_thumbnail {tutorialtemplate tutorial} {
 proc gen_tutorials_page {} {
     global tutorials
     
-    foreach {template tutorialtemplate} [templates_load index] break
+    foreach {template full_worktemplate thumbnail_worktemplate} [templates_load index] break
 
-    set HEADER [gen_header]
+    set HEADER [gen_header learn]
     set FOOTER [gen_footer]
     
     set CONTENT [list]
-    lappend CONTENT [h1 Tutorials]
+    # lappend CONTENT [h1 Tutorials]
     foreach tutorial $tutorials(list) {
 	puts "gen thumbnail tutorial $tutorial"
-	lappend CONTENT [gen_tutorial_thumbnail $tutorialtemplate $tutorial]
+	lappend CONTENT [gen_tutorial_thumbnail $thumbnail_worktemplate $tutorial]
     }	
     
     set CONTENT [join $CONTENT \n]
@@ -63,7 +63,7 @@ proc gen_tutorials {maxntutorials} {
 proc tutoimagefilepath {filename} {
     set imagefilename $filename
     set found 0
-    foreach dir {C:/archive/dots2art/images/bigs/archive C:/archive/dots2art/images/source C:/DEV/PVG/examples C:/archive/dots2art/images/tuto} {
+    foreach dir {C:/archive/dots2art/images/bigs/archive C:/archive/dots2art/images/source c:/Dropbox/dev/PVG/examples C:/archive/dots2art/images/tuto} {
 	if {[file exists "${dir}/$imagefilename"]} {
 	    set imagefilepath "${dir}/$imagefilename"
 	    set found 1

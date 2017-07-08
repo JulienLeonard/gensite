@@ -34,7 +34,9 @@ proc checkthumbnails {} {
 	
 	if {![file exists $thumbnailfilepath]} {
 	    puts "thumbnail $filename missing, create it"
-	    createthumbnails $filepath
+	    if {[catch {createthumbnails $filepath}]} {
+		puts "Error creating thumbnail for $filepath"
+	    }
 	}
     }
 }

@@ -1,16 +1,13 @@
-source utils.tcl
-
-set currentdir [pwd]
-cd "C:/PROJECTS/MYDB"
-source mydb.tcl
-cd $currentdir
+source distsource.tcl
+distsource ../../utils utils.tcl
+distsource ../../utils mydb.tcl
 set myDB [MYDB]
 
-proc gensite_index_filepath     {} {global myDB; return [orgdb_property $myDB "DOTS2ART-INDEX-ORG"]}
-proc gensite_works_filepath     {} {global myDB; return [orgdb_property $myDB "DOTS2ART-WORKS-ORG"]}
-proc gensite_projects_filepath  {} {global myDB; return [orgdb_property $myDB "DOTS2ART-PROJECTS-ORG"]}
-proc gensite_dynamics_filepath  {} {global myDB; return [orgdb_property $myDB "DOTS2ART-DYNAMICS-ORG"]}
-proc gensite_tutorials_filepath {} {global myDB; return [orgdb_property $myDB "DOTS2ART-TUTORIALS-ORG"]}
+proc gensite_index_filepath     {} {return [MYDBPROP "DOTS2ART-INDEX-ORG"]}
+proc gensite_works_filepath     {} {return [MYDBPROP "DOTS2ART-WORKS-ORG"]}
+proc gensite_projects_filepath  {} {return [MYDBPROP "DOTS2ART-PROJECTS-ORG"]}
+proc gensite_dynamics_filepath  {} {return [MYDBPROP "DOTS2ART-DYNAMICS-ORG"]}
+proc gensite_tutorials_filepath {} {return [MYDBPROP "DOTS2ART-TUTORIALS-ORG"]}
 
 
 #
@@ -18,10 +15,8 @@ proc gensite_tutorials_filepath {} {global myDB; return [orgdb_property $myDB "D
 #
 proc load_pages_data {} {
     global pages
-    set currentdir [pwd]
-    cd "c:/DEV/org2obj/"
-    source org2obj.tcl
-    cd $currentdir
+
+    distsource ../../org2obj org2obj.tcl
 
     array set orgpages [org2obj [gensite_index_filepath]]
 
@@ -57,10 +52,7 @@ proc load_pages_data {} {
 proc load_works_data {} {
     global works
     
-    set currentdir [pwd]
-    cd "c:/DEV/org2obj/"
-    source org2obj.tcl
-    cd $currentdir
+    distsource ../../org2obj org2obj.tcl
 
     array set orgworks [org2obj [gensite_works_filepath]]
 
@@ -90,10 +82,7 @@ proc load_works_data {} {
 #
 proc load_dynamics_data {} {
     global dynamics
-    set currentdir [pwd]
-    cd "c:/DEV/org2obj/"
-    source org2obj.tcl
-    cd $currentdir
+    distsource ../../org2obj org2obj.tcl
 
     array set orgdynamics [org2obj [gensite_dynamics_filepath]]
 
@@ -136,10 +125,7 @@ proc load_projects_data {} {
     global works
     global projects
     
-    set currentdir [pwd]
-    cd "c:/DEV/org2obj/"
-    source org2obj.tcl
-    cd $currentdir
+    distsource ../../org2obj org2obj.tcl
 
     array set orgprojects [org2obj [gensite_projects_filepath]]
 
@@ -278,10 +264,7 @@ proc splitworkdata {aworks} {
 proc load_tutorials_data {} {
     global tutorials
     
-    set currentdir [pwd]
-    cd "c:/DEV/org2obj/"
-    source org2obj.tcl
-    cd $currentdir
+    distsource ../../org2obj org2obj.tcl
 
     array set orgtutorials [org2obj [gensite_tutorials_filepath]]
 
@@ -294,7 +277,7 @@ proc load_tutorials_data {} {
 	    lappend result(list) $ID
 	    
 	    set result($ID,imageheader) $orgtutorials($tutorial,param,imageheader)
-	    foreach dir {C:/archive/dots2art/images/bigs/archive C:/archive/dots2art/images/source C:/DEV/PVG/examples} {
+	    foreach dir {C:/archive/dots2art/images/bigs/archive C:/archive/dots2art/images/source c:/Dropbox/dev/PVG/examples} {
 		if {[file exists "${dir}/$orgtutorials($tutorial,param,imageheader)"]} {
 		    set result($ID,imageheader)  "${dir}/$orgtutorials($tutorial,param,imageheader)"
 		    break
@@ -316,6 +299,3 @@ proc load_tutorials_data {} {
 
     array set tutorials [array get result]
 }
-
-
-
